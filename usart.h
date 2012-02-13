@@ -1,4 +1,29 @@
-#include <avr/io.h>
+/*
+ * USART lib for ATxmega chips
+ * 
+ * Options - use as "#define OPTION value":
+ *     ENABLE_USART_C0        - enable usart interface. Interface is then available as
+ *     ENABLE_USART_C1          usart_c0, usart_c1, ...
+ *     ENABLE_USART_D0
+ *     ENABLE_USART_D1
+ *     ENABLE_USART_E0
+ * 
+ *     DEFAULT_BAUD           - default baud rate to set
+ *
+ *     DEFAULT_USART_RX_BUFF  - buffer size
+ *     DEFAULT_USART_TX_BUFF
+ *
+ *     DISABLE_USART_FLOAT    - if set to 1, float calculations of baud
+ *                              rate are disabled
+ *
+ *     USART_BSEL_HACK        - if set to 1, 1 is added to bsel register value.
+ *                              To be used with DISABLE_USART_FLOAT
+ */
+
+#ifndef XMEGA_LIB_USART
+#define XMEGA_LIB_USART
+
+#include "queue.h"
 
 #ifndef F_PER
     #error "F_PER not defined"
@@ -15,63 +40,6 @@
 #ifndef DEFAULT_USART_TX_BUFF
     #define DEFAULT_USART_TX_BUFF 96
 #endif
-
-template <typename T, uint8_t size>
-class queue_t
-{
-public:
-    queue_t()
-    {
-        m_wr_itr = 0;
-        m_rd_itr = 0;
-    }
-
-    bool push(T data)
-    {
-        uint8_t wr = m_wr_itr;
-
-        uint8_t new_itr = incIfCan(m_wr_itr);
-
-        if(new_itr == m_rd_itr)
-            return false;
-
-        m_data[wr] = data;
-        m_wr_itr = new_itr;
-        return true;
-    }
-
-    bool empty()
-    {
-        return m_rd_itr == m_wr_itr;
-    }
-
-    bool full()
-    {
-        return incIfCan(m_wr_itr) == m_rd_itr;
-    }
-
-    T top() const
-    {
-        return m_data[m_rd_itr];
-    }
-
-    void pop()
-    {
-        m_rd_itr = incIfCan(m_rd_itr);
-    }
-
-private:
-    uint8_t incIfCan(uint8_t val)
-    {
-        ++val;
-        return val == size ? 0 : val;
-    }
-
-    T m_data[size];
-
-    volatile uint8_t m_wr_itr;
-    volatile uint8_t m_rd_itr;
-};
 
 enum usart_part
 {
@@ -281,4 +249,4 @@ void init_usart()
 #endif
 }
 
-
+#endif
